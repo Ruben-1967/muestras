@@ -168,5 +168,101 @@ var video=document.getElementById('heroVideo');var plays=1;video.muted=true;vide
 document.querySelectorAll('[data-interest]').forEach(function(btn){btn.addEventListener('click',function(){var v=btn.getAttribute('data-interest');var m=btn.getAttribute('data-modalidad');var sel=document.getElementById('interes');if(sel)sel.value=v;if(m)document.getElementById('modalidad').value=m;document.getElementById('agendar').scrollIntoView({behavior:'smooth'});});});
 document.getElementById('agendaForm').addEventListener('submit',function(e){e.preventDefault();var nombre=document.getElementById('nombre').value.trim();var telefono=document.getElementById('telefono').value.trim();if(!nombre||!telefono){alert('Por favor completa tu nombre y teléfono.');return;}var lines=[];lines.push('Hola Carla, quiero consultar en Amar Ser:');lines.push('Nombre: '+nombre);lines.push('Teléfono: '+telefono);lines.push('¿Qué te interesa?: '+document.getElementById('interes').value);lines.push('Modalidad: '+document.getElementById('modalidad').value);var fecha=document.getElementById('fecha').value;if(fecha)lines.push('Fecha preferida: '+fecha);var com=document.getElementById('comentarios').value.trim();if(com)lines.push('Cuéntame un poco: '+com);var url='https://wa.me/56991005178?text='+encodeURIComponent(lines.join('\n'));window.open(url,'_blank');});
 </script>
+<!-- Ventana de promoción (prototipo 19-nov-2026). En la versión final, el contenido vendrá del panel de TotemSystem. -->
+<style>
+#promo-fondo{position:fixed;inset:0;z-index:1000;background:rgba(43,38,32,.55);display:none;align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity .3s}
+#promo-fondo.promo-ver{display:flex}
+#promo-fondo.promo-in{opacity:1}
+#promo-caja{position:relative;width:min(440px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--cream,#FFF8F0);border-radius:22px;box-shadow:0 24px 70px rgba(43,38,32,.35);transform:translateY(16px) scale(.98);transition:transform .3s}
+#promo-fondo.promo-in #promo-caja{transform:none}
+#promo-img{width:100%;height:220px;object-fit:cover;border-radius:22px 22px 0 0;display:block}
+#promo-cerrar{position:absolute;top:10px;right:10px;width:38px;height:38px;border-radius:999px;border:none;background:rgba(43,38,32,.75);color:#fff;font-size:20px;line-height:1;cursor:pointer}
+#promo-cerrar:focus-visible,#promo-ops a:focus-visible{outline:3px solid var(--terra,#C97A5A);outline-offset:2px}
+#promo-txt{padding:18px 20px 20px;text-align:center;color:var(--ink,#2B2620)}
+#promo-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--lila,#C9B8D6);color:var(--ink,#2B2620);border-radius:999px;padding:3px 10px;margin-bottom:8px}
+#promo-txt h3{font-family:inherit;font-size:22px;line-height:1.25;margin:0 0 6px}
+#promo-txt p{margin:0 0 14px;color:var(--muted,#6B6259);font-size:15px}
+#promo-ops{display:grid;gap:8px}
+#promo-ops a{display:block;padding:11px 12px;border:1.5px solid var(--terra,#C97A5A);border-radius:12px;color:var(--terra2,#B95A3E);font-weight:700;font-size:14px;letter-spacing:.02em;background:#fff;text-decoration:none}
+#promo-ops a:hover{background:var(--terra,#C97A5A);color:#fff}
+#promo-nota{font-size:12px;color:var(--muted,#6B6259);margin-top:12px}
+@media (max-width:640px){
+  #promo-fondo{align-items:flex-end;padding:0}
+  #promo-caja{width:100%;border-radius:22px 22px 0 0;max-height:85vh;transform:translateY(100%)}
+  #promo-img{height:170px}
+  #promo-txt h3{font-size:20px}
+}
+.promo-destacado{outline:3px solid var(--terra,#C97A5A);outline-offset:4px;border-radius:16px;animation:promoPulso 1.2s ease 2}
+@keyframes promoPulso{0%,100%{outline-color:var(--terra,#C97A5A)}50%{outline-color:transparent}}
+@media (prefers-reduced-motion:reduce){#promo-fondo,#promo-caja{transition:none}.promo-destacado{animation:none}}
+</style>
+<div id="promo-fondo" aria-hidden="true">
+  <div id="promo-caja" role="dialog" aria-modal="true" aria-labelledby="promo-titulo">
+    <img id="promo-img" alt="Regalos con sentido de Amar Ser">
+    <button id="promo-cerrar" type="button" aria-label="Cerrar promoción">×</button>
+    <div id="promo-txt">
+      <span id="promo-tag">Ejemplo de promoción</span>
+      <h3 id="promo-titulo">Regalos con sentido para esta Navidad</h3>
+      <p>Paquetes de regalo y piezas de autor hechas a mano. Elige lo que te interesa para verlo y cotizar:</p>
+      <div id="promo-ops">
+        <a data-destino='img[alt="Ejemplo - Regalos con sentido"]' href="#tiendita">Paquetes de regalo</a>
+        <a data-destino='img[alt="Ejemplo - Arte hecho a mano"]' href="#tiendita">Piezas de autor</a>
+        <a data-destino='img[alt="Terapias en Amar Ser"]' href="#consultorio">Terapias</a>
+        <a data-destino="#talleres" href="#talleres">Charlas y talleres</a>
+      </div>
+      <div id="promo-nota">Promoción de muestra: Carla la cambia o la apaga cuando quiera.</div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var WA='56991005178', CLAVE='amarser-promo-cerrada', ESPERA=4000;
+  var fondo=document.getElementById('promo-fondo'), caja=document.getElementById('promo-caja');
+  var img=document.getElementById('promo-img'), cerrar=document.getElementById('promo-cerrar');
+  // Reutiliza la foto de la tarjeta "Regalos con sentido" (no suma peso al sitio).
+  var origen=document.querySelector('img[alt="Ejemplo - Regalos con sentido"]') || document.querySelector('img');
+  if (origen) img.src=origen.currentSrc || origen.src;
+  // Cada opción lleva a su producto o servicio en el sitio (como jeep.cl), para verlo y cotizar desde ahí.
+  [].forEach.call(document.querySelectorAll('#promo-ops a'), function(a){
+    a.addEventListener('click', function(e){
+      var el=document.querySelector(a.getAttribute('data-destino'));
+      var tarjeta=el ? (el.closest('article') || el) : null;
+      if (!tarjeta) return; // sin destino: sigue el enlace a la sección (href)
+      e.preventDefault(); ocultar(true);
+      setTimeout(function(){
+        tarjeta.scrollIntoView({behavior:'smooth', block:'center'});
+        tarjeta.classList.add('promo-destacado');
+        setTimeout(function(){ tarjeta.classList.remove('promo-destacado'); }, 2600);
+      }, 320);
+    });
+  });
+  // Una vez por visita: si la cierra, no vuelve a salir mientras siga en el sitio (misma pestaña); en la próxima visita, sí.
+  function cerradaHoy(){ try{ return sessionStorage.getItem(CLAVE)==='1'; }catch(e){ return false; } }
+  function recordar(){ try{ sessionStorage.setItem(CLAVE,'1'); }catch(e){} }
+  var abierta=false, foco=null, mostrada=false;
+  function mostrar(){
+    if (mostrada || cerradaHoy()) return; mostrada=true; abierta=true; foco=document.activeElement;
+    fondo.classList.add('promo-ver'); fondo.setAttribute('aria-hidden','false');
+    void fondo.offsetWidth; setTimeout(function(){ fondo.classList.add('promo-in'); }, 30);
+    setTimeout(function(){ cerrar.focus(); }, 50);
+  }
+  function ocultar(guardar){
+    if (!abierta) return; abierta=false; if (guardar!==false) recordar();
+    fondo.classList.remove('promo-in'); fondo.setAttribute('aria-hidden','true');
+    setTimeout(function(){ fondo.classList.remove('promo-ver'); }, 300);
+    if (foco && foco.focus) foco.focus();
+  }
+  cerrar.addEventListener('click', function(){ ocultar(); });
+  fondo.addEventListener('click', function(e){ if (e.target===fondo) ocultar(); });
+  document.addEventListener('keydown', function(e){ if (abierta && e.key==='Escape') ocultar(); });
+  // Aparece a los 4 segundos o al bajar un poco: nunca tapa la página apenas carga (Google penaliza eso en celular).
+  setTimeout(mostrar, ESPERA);
+  document.addEventListener('scroll', function onScroll(e){
+    var t=e.target && e.target.scrollTop!==undefined && e.target!==document ? e.target.scrollTop : (window.scrollY||document.documentElement.scrollTop);
+    if (t>600){ mostrar(); document.removeEventListener('scroll', onScroll, true); }
+  }, true);
+})();
+</script>
+
 <script src="visita.js" defer></script></body>
 </html>
